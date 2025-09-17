@@ -1,4 +1,4 @@
-package org.javaboy.client2;
+package org.javaboy.authserver;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -32,8 +32,6 @@ public class TokenExchangeController {
     private String tokenUri;
     @Value("${security.oauth2.auth_server.url}")
     private String AUTH_SERVER;
-    @Value("${security.oauth2.client_server.url}")
-    private String CLIENT_SERVER;
     @Value("${security.oauth2.client.client-id}")
     private String CLIENT_ID;
     private static final String signingKey = "state-token-signing-key";
@@ -63,8 +61,9 @@ public class TokenExchangeController {
 
         String authorizeUrl = String.format(
                 "%s?client_id=%s&redirect_uri=%s&response_type=code&state=%s",
-                AUTH_SERVER+"/oauth/authorize", CLIENT_ID, CLIENT_SERVER+"/oauth/callback", rawState
+                AUTH_SERVER+"/oauth/authorize", CLIENT_ID, AUTH_SERVER+"/oauth/callback", rawState
         );
+
 
         Map<String, String> result = new HashMap<>();
         result.put("authorizeUrl", authorizeUrl);
@@ -76,7 +75,7 @@ public class TokenExchangeController {
      * @param request
      * @return
      */
-    @GetMapping("/oauth/callback")
+//    @GetMapping("/oauth/callback")
     public ResponseEntity<?> exchangeCode(CodeRequest request, HttpSession session) {
         String expectedState = (String) session.getAttribute("oauth_state");
         session.removeAttribute("oauth_state");
@@ -87,7 +86,7 @@ public class TokenExchangeController {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("grant_type", "authorization_code");
         params.add("code", request.getCode());
-        params.add("redirect_uri", "http://localhost:1204/oauth/callback");
+        params.add("redirect_uri", "http://localhost:1201/oauth/callback");
         if (request.getCodeVerifier() != null) {
             params.add("code_verifier", request.getCodeVerifier()); // PKCE
         }

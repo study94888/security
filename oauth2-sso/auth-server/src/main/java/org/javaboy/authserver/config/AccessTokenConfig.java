@@ -28,7 +28,7 @@ public class AccessTokenConfig {
     @Bean
     JwtAccessTokenConverter jwtAccessTokenConverter() {
         System.out.println("✅ 使用新密钥创建 JwtAccessTokenConverter: " + SIGNING_KEY);
-        JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
+        JwtAccessTokenConverter converter = new CustomJwtAccessTokenConverter();
         converter.setSigningKey(SIGNING_KEY);
         System.out.println("Key bytes: " + Arrays.toString(SIGNING_KEY.getBytes(StandardCharsets.UTF_8)));
         System.out.println("Key length: " + SIGNING_KEY.getBytes(StandardCharsets.UTF_8).length);

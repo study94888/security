@@ -1,9 +1,8 @@
-package org.javaboy.authserver.config;
+package org.javaboy.client1.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.oauth2.common.exceptions.InvalidTokenException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
@@ -11,7 +10,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -55,7 +53,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
                 response.setStatus(HttpStatus.UNAUTHORIZED.value());
                 response.setContentType("application/json;charset=UTF-8");
                 result.put("data", null);
-                result.put("redirect", "/oauth/login"); // 前端可跳转到这里
+                result.put("redirect", fullUri); // 前端可跳转到这里
                 ObjectMapper mapper = new ObjectMapper();
                 response.getWriter().write(mapper.writeValueAsString(result));
             } else {

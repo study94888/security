@@ -13,7 +13,6 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.util.Arrays;
 
 /**
@@ -34,20 +33,21 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
-                .antMatchers("/oauth2/callback").permitAll()
-                .antMatchers("/login**").permitAll()             // 可选：兼容旧路径
-                .antMatchers("/api/auth/**").permitAll()  // ✅ 放行自定义回调
+                .antMatchers("/oauth/callback").permitAll()
+                .antMatchers("/oauth/initiate").permitAll()
                 .antMatchers("/hello").authenticated()       // 需要登录才能访问
                 .anyRequest().permitAll()
                 .and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
+                // JWT 资源服务器，会直接验证 JWT token，而不会将请求转发到授权服务器进行认证。/hello
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt ->{
                             jwt.decoder(jwtDecoder());
                             jwt.jwtAuthenticationConverter(new CustomJwtAuthenticationConverter());
                                 } )                        // 使用自定义 decoder 验证签名
                         )
+
                 // 前后端分离不需要 CSRF（如果是 Cookie 登录则需要）
                 .csrf().disable();
 

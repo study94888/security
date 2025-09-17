@@ -3,6 +3,7 @@ package org.javaboy.authserver.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
@@ -45,6 +46,8 @@ public class AuthServerConfig extends AuthorizationServerConfigurerAdapter {
     CustomAdditionalInformation customAdditionalInformation;
     @Autowired
     CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    @Autowired
+    private UserDetailsService userDetailsService; // 确保已定义并注入
     @Bean
     AuthorizationServerTokenServices tokenServices() {
         DefaultTokenServices services = new DefaultTokenServices();
@@ -52,7 +55,8 @@ public class AuthServerConfig extends AuthorizationServerConfigurerAdapter {
         services.setSupportRefreshToken(true);
         services.setTokenStore(tokenStore);
         TokenEnhancerChain tokenEnhancerChain = new TokenEnhancerChain();
-        tokenEnhancerChain.setTokenEnhancers(Arrays.asList(jwtAccessTokenConverter, customAdditionalInformation));
+        // 先添加额外信息，再由 JwtAccessTokenConverter 转为 JWT
+        tokenEnhancerChain.setTokenEnhancers(Arrays.asList(customAdditionalInformation,jwtAccessTokenConverter));
         services.setTokenEnhancer(tokenEnhancerChain);
         return services;
     }
@@ -60,26 +64,36 @@ public class AuthServerConfig extends AuthorizationServerConfigurerAdapter {
     @Override
     public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
         security.checkTokenAccess("permitAll()")
-                .allowFormAuthenticationForClients();
-//                .authenticationEntryPoint(customAuthenticationEntryPoint);
+                .allowFormAuthenticationForClients()
+                .authenticationEntryPoint(customAuthenticationEntryPoint);
     }
 
     @Override
     public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
         clients.inMemory()
-                .withClient("javaboy")
+                .withClient("platform")
                 .secret(passwordEncoder.encode("123"))
                 .autoApprove(true)
                 .resourceIds("res1")
                 .authorizedGrantTypes("authorization_code","refresh_token")
                 .scopes("all")
-                .redirectUris("http://localhost:1202/login", "http://localhost:1204/oauth2/callback");
+                .redirectUris("http://localhost:1201/oauth/callback")
+                .and()
+                .withClient("client1")
+                .secret(passwordEncoder.encode("123"))
+                .autoApprove(true)
+                .resourceIds("res1")
+                .redirectUris("http://localhost:1204/oauth/callback")
+                .authorizedGrantTypes("authorization_code","refresh_token")
+                .scopes("all");
     }
 
     @Override
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
         endpoints.authorizationCodeServices(authorizationCodeServices())
-                .tokenServices(tokenServices());
+                .tokenServices(tokenServices())
+                .accessTokenConverter(jwtAccessTokenConverter)
+                .userDetailsService(userDetailsService);
     }
     @Bean
     AuthorizationCodeServices authorizationCodeServices() {
