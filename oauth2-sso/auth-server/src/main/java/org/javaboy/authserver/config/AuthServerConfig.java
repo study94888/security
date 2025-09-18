@@ -3,6 +3,7 @@ package org.javaboy.authserver.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -44,8 +45,8 @@ public class AuthServerConfig extends AuthorizationServerConfigurerAdapter {
     JwtAccessTokenConverter jwtAccessTokenConverter;
     @Autowired
     CustomAdditionalInformation customAdditionalInformation;
-    @Autowired
-    CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+//    @Autowired
+//    CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     @Autowired
     private UserDetailsService userDetailsService; // 确保已定义并注入
     @Bean
@@ -64,8 +65,8 @@ public class AuthServerConfig extends AuthorizationServerConfigurerAdapter {
     @Override
     public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
         security.checkTokenAccess("permitAll()")
-                .allowFormAuthenticationForClients()
-                .authenticationEntryPoint(customAuthenticationEntryPoint);
+                .allowFormAuthenticationForClients();
+//                .authenticationEntryPoint(customAuthenticationEntryPoint);
     }
 
     @Override

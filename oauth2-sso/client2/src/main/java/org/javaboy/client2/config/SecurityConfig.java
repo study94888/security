@@ -9,6 +9,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 
 
 import javax.crypto.spec.SecretKeySpec;
@@ -28,7 +29,10 @@ import java.util.Arrays;
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private static final String SIGNING_KEY = "my-super-long-and-secure-signing-key!";
-
+    @Bean
+    public AuthenticationEntryPoint jsonAuthenticationEntryPoint() {
+        return new CustomAuthenticationEntryPoint();
+    }
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
@@ -47,7 +51,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                             jwt.jwtAuthenticationConverter(new CustomJwtAuthenticationConverter());
                                 } )                        // 使用自定义 decoder 验证签名
                         )
-
+                .exceptionHandling()
+                .authenticationEntryPoint( jsonAuthenticationEntryPoint())
+                .and()
                 // 前后端分离不需要 CSRF（如果是 Cookie 登录则需要）
                 .csrf().disable();
 

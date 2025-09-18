@@ -16,13 +16,13 @@ import org.springframework.security.oauth2.config.annotation.web.configurers.Res
 @EnableResourceServer  // 启用资源服务器
 public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
 
-    @Autowired
-    private CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+//    @Autowired
+//    private CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Override
     public void configure(ResourceServerSecurityConfigurer resources) throws Exception {
-        resources.resourceId("res1") // 必须和 client 配置中的 resourceId 一致
-                .authenticationEntryPoint(customAuthenticationEntryPoint); // 自定义未登录响应
+        resources.resourceId("res1"); // 必须和 client 配置中的 resourceId 一致
+//                .authenticationEntryPoint(customAuthenticationEntryPoint); // 自定义未登录响应
     }
 
     @Override
