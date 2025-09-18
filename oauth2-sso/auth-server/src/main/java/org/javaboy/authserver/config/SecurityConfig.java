@@ -32,6 +32,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,10 +50,12 @@ import java.util.Map;
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private PermissiveAuthenticationProvider permissiveAuthenticationProvider;
-//    @Autowired
-//    private CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    @Autowired
+    private CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     @Autowired
     private RequestCache requestCache;
+    @Autowired
+    private OAuthRequestStore store;
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -81,14 +84,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 // 自定义未认证处理
                 .exceptionHandling()
-//                .defaultAuthenticationEntryPointFor(
-//                        customAuthenticationEntryPoint, // 使用 JSON 响应
-//                        new AntPathRequestMatcher("/oauth/authorize") // 只对 /oauth/authorize 生效
-//                )
+                .defaultAuthenticationEntryPointFor(
+                        customAuthenticationEntryPoint, // 使用 JSON 响应
+                        new AntPathRequestMatcher("/oauth/authorize") // 只对 /oauth/authorize 生效
+                )
 
                 .and()
                 .formLogin()
-                .loginPage("/login.html") // 登录页仍是 authorize（触发EntryPoint）
+                .loginPage("/oauth/authorize") // 登录页仍是 authorize（触发EntryPoint）
                 .loginProcessingUrl("/oauth/login") // 自定义登录提交地址
                 .successHandler(authenticationSuccessHandler()) // 登录成功处理器
                 .failureHandler(authenticationFailureHandler()) // 登录失败处理器
@@ -165,8 +168,24 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     public AuthenticationSuccessHandler authenticationSuccessHandler() {
         return (request, response, authentication) -> {
             SavedRequest savedRequest = requestCache().getRequest(request, response);
+// 在 getRequest 前打印
+            System.out.println("👉 CURRENT SESSION ID: " + request.getSession().getId());
+            System.out.println("👉 SAVED REQUEST: " + savedRequest);
+            System.out.println("👉 Request URI: " + request.getRequestURI());
+            String state = (String) request.getSession().getAttribute("OAUTH_STATE");
+            request.getSession().removeAttribute("OAUTH_STATE"); // 清理
+            ObjectMapper mapper = new ObjectMapper();
+            if (state != null) {
+                String originalUrl = store.remove(state);
+                if (originalUrl != null) {
+                    response.sendRedirect(originalUrl); // 回到 authorize → 生成 code
+                    return;
+                }
+            }
+
 
             String redirectUri = "https://localhost:1204/oauth/callback"; // 默认
+
             if (savedRequest != null) {
                 // 获取原始请求的 URL 和参数
                 redirectUri = savedRequest.getRedirectUrl(); // 完整 URL，含 redirect_uri 参数

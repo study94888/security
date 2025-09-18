@@ -45,8 +45,8 @@ public class AuthServerConfig extends AuthorizationServerConfigurerAdapter {
     JwtAccessTokenConverter jwtAccessTokenConverter;
     @Autowired
     CustomAdditionalInformation customAdditionalInformation;
-//    @Autowired
-//    CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    @Autowired
+    CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     @Autowired
     private UserDetailsService userDetailsService; // 确保已定义并注入
     @Bean
@@ -65,8 +65,8 @@ public class AuthServerConfig extends AuthorizationServerConfigurerAdapter {
     @Override
     public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
         security.checkTokenAccess("permitAll()")
-                .allowFormAuthenticationForClients();
-//                .authenticationEntryPoint(customAuthenticationEntryPoint);
+                .allowFormAuthenticationForClients()
+                .authenticationEntryPoint(customAuthenticationEntryPoint);
     }
 
     @Override
@@ -84,7 +84,7 @@ public class AuthServerConfig extends AuthorizationServerConfigurerAdapter {
                 .secret(passwordEncoder.encode("123"))
                 .autoApprove(true)
                 .resourceIds("res1")
-                .redirectUris("http://localhost:1204/oauth/callback")
+                .redirectUris("https://localhost:1204/oauth/callback")
                 .authorizedGrantTypes("authorization_code","refresh_token")
                 .scopes("all");
     }

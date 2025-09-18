@@ -25,7 +25,8 @@ import java.util.Map;
  */
 @Component
 public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
-
+    @Autowired
+    private OAuthRequestStore store;
 
     private final RequestCache requestCache;
 
@@ -80,12 +81,15 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
 //            response.setContentType("text/html;charset=UTF-8");
 //            response.getWriter().write(AUTO_LOGIN_HTML);
             // ✅ 使用 Spring Security 的 RequestCache 来保存原始请求
-
-            requestCache.saveRequest(request, response);
+            String state = store.save("/oauth/authorize?" + request.getQueryString());
+//            requestCache.saveRequest(request, response);
 
             // 🔁 重定向到前端登录页（可以是外部地址）
-            String redirectUrl =loginUrl + "?" + request.getQueryString();
-//            response.sendRedirect(redirectUrl);
+            String redirectUrl =loginUrl + "?" + request.getQueryString()+"&state="+state;
+            System.out.println("👉 SAVED Request URI: " + request.getRequestURI());
+            System.out.println("👉 SESSION ID: " + request.getSession().getId());
+            response.sendRedirect(redirectUrl);
+
 //            // 保存原始请求参数，以便登录后重试
 //            String query = request.getQueryString() != null ? "?" + request.getQueryString() : "";
 //            String fullUri = requestUri + query;

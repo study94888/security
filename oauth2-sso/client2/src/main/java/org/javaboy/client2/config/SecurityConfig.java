@@ -10,10 +10,16 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.web.client.RestTemplate;
 
 
 import javax.crypto.spec.SecretKeySpec;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
 /**

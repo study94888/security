@@ -32,17 +32,22 @@ public class JsonUsernamePasswordAuthenticationFilter extends UsernamePasswordAu
 
         ObjectMapper mapper = new ObjectMapper();
         UsernamePasswordAuthenticationToken authRequest;
-        try (InputStream is = request.getInputStream()) {
-            Map<String, String> map = mapper.readValue(is, Map.class);
-            String username = map.getOrDefault("username", "");
-            String password = map.getOrDefault("password", "");
-
-            authRequest = new UsernamePasswordAuthenticationToken(username, password);
-            setDetails(request, authRequest);
-
-            return this.getAuthenticationManager().authenticate(authRequest);
+        Map<String, String> credentials = null;
+        try {
+            credentials = mapper.readValue(request.getInputStream(), Map.class);
         } catch (IOException e) {
-            throw new RuntimeException("Could not read request", e);
+            throw new RuntimeException(e);
         }
+        String username = credentials.get("username");
+        String password = credentials.get("password");
+        String state = credentials.get("state"); // ← 拿到 state
+        // 将 state 存入 Session，供后续 SuccessHandler 使用
+        request.getSession().setAttribute("OAUTH_STATE", state);
+
+        authRequest = new UsernamePasswordAuthenticationToken(username, password);
+        setDetails(request, authRequest);
+
+        return this.getAuthenticationManager().authenticate(authRequest);
+
     }
 }

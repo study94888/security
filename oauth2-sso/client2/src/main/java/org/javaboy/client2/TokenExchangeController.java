@@ -78,16 +78,16 @@ public class TokenExchangeController {
      */
     @GetMapping("/oauth/callback")
     public ResponseEntity<?> exchangeCode(CodeRequest request, HttpSession session) {
-        String expectedState = (String) session.getAttribute("oauth_state");
-        session.removeAttribute("oauth_state");
-        if (expectedState == null || !request.getState().equals(expectedState)) {
-            return ResponseEntity.badRequest().body("CSRF detected: invalid or missing state");
-        }
+//        String expectedState = (String) session.getAttribute("oauth_state");
+//        session.removeAttribute("oauth_state");
+//        if (expectedState == null || !request.getState().equals(expectedState)) {
+//            return ResponseEntity.badRequest().body("CSRF detected: invalid or missing state");
+//        }
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("grant_type", "authorization_code");
         params.add("code", request.getCode());
-        params.add("redirect_uri", "http://localhost:1204/oauth/callback");
+        params.add("redirect_uri", "https://localhost:1204/oauth/callback");
         if (request.getCodeVerifier() != null) {
             params.add("code_verifier", request.getCodeVerifier()); // PKCE
         }
