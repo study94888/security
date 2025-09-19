@@ -19,7 +19,7 @@ import java.util.Arrays;
 
 @Configuration
 public class AccessTokenConfig {
-    private static final String SIGNING_KEY = "my-super-long-and-secure-signing-key!";
+    public static final String SIGNING_KEY = "my-super-long-and-secure-signing-key!";
     @Bean
     TokenStore tokenStore() {
         return new JwtTokenStore(jwtAccessTokenConverter());

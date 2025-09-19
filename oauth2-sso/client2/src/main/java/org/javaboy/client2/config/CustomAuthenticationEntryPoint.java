@@ -32,7 +32,8 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
     @Value("${security.oauth2.client.client-id}")
     private String CLIENT_ID;
 //    public static final String callbackUrl = "https://www.baidu.com";
-    public static final String callbackUrl = "https://localhost:1204"+"/oauth/callback";
+    public static final String callbackUrl = "https://ax2.youku.com:1204"+"/oauth/callback";
+//    public static final String callbackUrl = "https://ax2.youku.com:1201/hello";
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,

@@ -1,5 +1,8 @@
 package org.javaboy.client2;
 
+import com.alibaba.fastjson.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -13,6 +16,8 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.View;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,6 +45,10 @@ public class TokenExchangeController {
     public TokenExchangeController(View error) {
         this.error = error;
     }
+
+    @Autowired
+    @Qualifier("unsafeRestTemplate")
+    private RestTemplate restTemplate; // 使用我们创建的“不安全”模板
 
 
     /**
@@ -77,7 +86,7 @@ public class TokenExchangeController {
      * @return
      */
     @GetMapping("/oauth/callback")
-    public ResponseEntity<?> exchangeCode(CodeRequest request, HttpSession session) {
+    public ResponseEntity<?> exchangeCode(CodeRequest request, HttpSession session, HttpServletResponse httpResponse) {
 //        String expectedState = (String) session.getAttribute("oauth_state");
 //        session.removeAttribute("oauth_state");
 //        if (expectedState == null || !request.getState().equals(expectedState)) {
@@ -87,7 +96,7 @@ public class TokenExchangeController {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("grant_type", "authorization_code");
         params.add("code", request.getCode());
-        params.add("redirect_uri", "https://localhost:1204/oauth/callback");
+        params.add("redirect_uri", "https://ax2.youku.com:1204/oauth/callback");
         if (request.getCodeVerifier() != null) {
             params.add("code_verifier", request.getCodeVerifier()); // PKCE
         }
@@ -101,9 +110,20 @@ public class TokenExchangeController {
         System.out.println("Headers: " + headers);
         System.out.println("Body: " + params);
         try {
-            ResponseEntity<Map> response = new RestTemplate()
+            ResponseEntity<Map> response = restTemplate
                     .postForEntity(tokenUri, entity, Map.class);
-            return ResponseEntity.ok(response.getBody()); // ✅ 把 JWT 返回前端
+            JSONObject bodyObj = new JSONObject(response.getBody());
+            String token = bodyObj.getString("access_token");
+            // 设置 Cookie
+            Cookie cookie = new Cookie("AUTH-TOKEN", token);
+            cookie.setDomain("ax2.youku.com");
+            cookie.setPath("/");
+            cookie.setSecure(true);
+            cookie.setHttpOnly(true); // JS 不能访问
+            cookie.setMaxAge(3600); // 1小时
+            httpResponse.addCookie(cookie);
+            return             // 将 Cookie 添加到响应中
+                    ResponseEntity.ok().body(response.getBody());// ✅ 把 JWT 返回前端
         } catch (HttpClientErrorException e) {
             // ✅ 打印详细错误
             System.err.println("Token request failed: " + e.getStatusCode());

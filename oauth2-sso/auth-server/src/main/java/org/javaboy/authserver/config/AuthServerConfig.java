@@ -84,7 +84,7 @@ public class AuthServerConfig extends AuthorizationServerConfigurerAdapter {
                 .secret(passwordEncoder.encode("123"))
                 .autoApprove(true)
                 .resourceIds("res1")
-                .redirectUris("https://localhost:1204/oauth/callback")
+                .redirectUris("https://ax2.youku.com:1204/oauth/callback")
                 .authorizedGrantTypes("authorization_code","refresh_token")
                 .scopes("all");
     }

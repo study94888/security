@@ -1,8 +1,11 @@
 package org.javaboy.client2.config;
 
 
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -11,6 +14,9 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 
 import javax.crypto.spec.SecretKeySpec;
@@ -60,12 +66,30 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .exceptionHandling()
                 .authenticationEntryPoint( jsonAuthenticationEntryPoint())
                 .and()
+                .cors()
+                .and()
                 // 前后端分离不需要 CSRF（如果是 Cookie 登录则需要）
                 .csrf().disable();
 
         // 不再使用 .oauth2Login() 或 @EnableOAuth2Sso
         // 让我们自己控制流程
 //        http.authorizeRequests().anyRequest().authenticated().and().csrf().disable();
+    }
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+
+        config.setAllowCredentials(true); // 允许携带 Cookie
+        config.addAllowedOrigin("https://pre.t.youku.com"); // ✅ 注意：生产环境建议精确指定
+
+        config.addAllowedHeader("*");
+        config.addAllowedMethod("*");
+        config.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+
+        return source;
     }
 
     @Bean
@@ -83,4 +107,38 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         }
         return NimbusJwtDecoder.withSecretKey(hmacKey).build();
     }
+
+    @Bean("unsafeRestTemplate")
+    public RestTemplate unsafeRestTemplate() {
+        try {
+            // 创建信任所有证书的 TrustManager
+            TrustManager[] trustAllCerts = new TrustManager[]{
+                    new X509TrustManager() {
+                        public java.security.cert.X509Certificate[] getAcceptedIssuers() { return null; }
+                        public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType) { }
+                        public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType) { }
+                    }
+            };
+
+            // 创建 SSLContext
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+
+            // 创建 HttpClient
+            CloseableHttpClient httpClient = HttpClients.custom()
+                    .setSSLContext(sslContext)
+                    .setSSLHostnameVerifier((hostname, session) -> true) // 忽略域名验证
+                    .build();
+
+            // 创建 factory
+            HttpComponentsClientHttpRequestFactory factory =
+                    new HttpComponentsClientHttpRequestFactory(httpClient);
+
+            return new RestTemplate(factory);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create unsafe RestTemplate", e);
+        }
+    }
+
 }

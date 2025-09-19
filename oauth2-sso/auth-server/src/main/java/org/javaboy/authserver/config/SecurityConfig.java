@@ -32,7 +32,10 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 
+import javax.crypto.spec.SecretKeySpec;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -56,6 +59,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private RequestCache requestCache;
     @Autowired
     private OAuthRequestStore store;
+
+    @Autowired
+    private CookieTokenFilter cookieTokenFilter;
+
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -75,10 +82,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.requestMatchers()
+                .antMatchers("/hello")
                 .antMatchers("/login")
                 .antMatchers("/oauth/authorize")
                 .antMatchers("/oauth/token")
                 .antMatchers("/oauth/login")
+                .and()
+                .authorizeRequests().antMatchers("/oauth/token/check").anonymous()
                 .and()
                 .authorizeRequests().anyRequest().authenticated()
                 .and()
@@ -100,11 +110,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .cors() // 启用 CORS 配置（必须有 CorsFilter 才生效）
                 .and()
                 .csrf().disable()
-                .addFilterAt(jsonLoginFilter(), UsernamePasswordAuthenticationFilter.class)
+//                .addFilterAt(jsonLoginFilter(), UsernamePasswordAuthenticationFilter.class)
                 // ✅ 显式启用 RequestCache
                 .requestCache()
                 .requestCache(requestCache) // 共享实例
-                .and();
+                .and()
+                .addFilterBefore(cookieTokenFilter, UsernamePasswordAuthenticationFilter.class)
+
+                // ✅ 保护资源
+
+                ;
     }
 
     @Bean
@@ -184,7 +199,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             }
 
 
-            String redirectUri = "https://localhost:1204/oauth/callback"; // 默认
+            String redirectUri = "https://ax2.youku.com:1201/oauth/authorize"; // 默认
 
             if (savedRequest != null) {
                 // 获取原始请求的 URL 和参数
@@ -215,15 +230,17 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         };
     }
 
-    @Bean
-    public JsonUsernamePasswordAuthenticationFilter jsonLoginFilter() throws Exception {
-        JsonUsernamePasswordAuthenticationFilter filter = new JsonUsernamePasswordAuthenticationFilter();
-        filter.setAuthenticationManager(authenticationManagerBean());
-        filter.setAuthenticationSuccessHandler(authenticationSuccessHandler());
-        filter.setAuthenticationFailureHandler(new SimpleUrlAuthenticationFailureHandler("/oauth/login?error"));
-        filter.setRequiresAuthenticationRequestMatcher(
-                new AntPathRequestMatcher("/oauth/login", "POST")
-        );
-        return filter;
-    }
+//    @Bean
+//    public JsonUsernamePasswordAuthenticationFilter jsonLoginFilter() throws Exception {
+//        JsonUsernamePasswordAuthenticationFilter filter = new JsonUsernamePasswordAuthenticationFilter();
+//        filter.setAuthenticationManager(authenticationManagerBean());
+//        filter.setAuthenticationSuccessHandler(authenticationSuccessHandler());
+//        filter.setAuthenticationFailureHandler(new SimpleUrlAuthenticationFailureHandler("/oauth/login?error"));
+//        filter.setRequiresAuthenticationRequestMatcher(
+//                new AntPathRequestMatcher("/oauth/login", "POST")
+//        );
+//        return filter;
+//    }
+
+
 }
